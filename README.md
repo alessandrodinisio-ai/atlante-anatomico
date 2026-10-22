@@ -4,8 +4,11 @@ Esploratore interattivo dell'anatomia umana costruito sulle tavole SVG del pacch
 [`@ebi-gene-expression-group/anatomogram`](https://github.com/gxa/anatomogram) (EMBL-EBI Expression Atlas),
 con gli identificativi delle ontologie UBERON e CL già incorporati nei disegni.
 
-Un unico file HTML autonomo: [`atlante.html`](atlante.html). Gli SVG sono incorporati nella pagina, senza richieste di rete
-oltre ai font di Google Fonts.
+**Online:** https://alessandrodinisio-ai.github.io/atlante-anatomico/
+
+Un unico file HTML autonomo: [`index.html`](index.html) (documento completo, servito da GitHub Pages) e
+[`atlante.html`](atlante.html) (stesso contenuto senza scheletro, per la pubblicazione come artifact).
+Gli SVG sono incorporati nella pagina, senza richieste di rete oltre ai font di Google Fonts.
 
 ## Cosa contiene
 
@@ -22,7 +25,8 @@ Tasti: `/` cerca · `↑ ↓` struttura precedente/successiva · `1–5` linguet
 ## Struttura
 
 ```
-atlante.html            pagina generata, pronta all'uso
+index.html              pagina generata per GitHub Pages
+atlante.html            stessa pagina senza scheletro (artifact)
 src/template.html       markup e CSS
 src/app.js              logica: caricamento SVG, zoom, selezione, schede, esercitazione, audio
 src/data_*.js           contenuti anatomici per sistema

@@ -22,10 +22,14 @@ html = (html.replace('<!--SVG_MALE-->', svg('male'))
 out.write_text(html, encoding='utf-8')
 print(out, f'{len(html.encode()) / 1024:.0f} KB')
 
-# Anteprima locale con lo scheletro che la pubblicazione aggiunge da sé.
+# Documento completo (lo scheletro che la pubblicazione come artifact aggiunge da sé):
+# index.html per GitHub Pages e anteprima locale in proto/.
+page = ('<!doctype html><html lang="it"><head><meta charset="utf-8">'
+        '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">'
+        '<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}'
+        'body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body>'
+        + html + '</body></html>')
+(src.parent / 'index.html').write_text(page, encoding='utf-8')
 preview = src.parent / 'proto' / 'atlante.html'
 preview.parent.mkdir(exist_ok=True)
-preview.write_text('<!doctype html><html lang="it"><head><meta charset="utf-8">'
-                   '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">'
-                   '<style>:root{color-scheme:light}body{margin:0}[hidden]{display:none!important}</style></head><body>'
-                   + html + '</body></html>', encoding='utf-8')
+preview.write_text(page, encoding='utf-8')
