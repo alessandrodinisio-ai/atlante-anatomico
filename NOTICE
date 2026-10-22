@@ -1,0 +1,6 @@
+This project includes SVG illustrations (homo_sapiens.male.svg, homo_sapiens.brain.svg) from
+@ebi-gene-expression-group/anatomogram 2.4.0 (https://github.com/gxa/anatomogram),
+Copyright EMBL-EBI, licensed under the Apache License, Version 2.0
+(https://www.apache.org/licenses/LICENSE-2.0).
+
+Modifications: the SVGs were optimized with SVGO (IDs preserved) and are restyled at runtime.
