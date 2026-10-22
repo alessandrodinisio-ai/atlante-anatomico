@@ -785,7 +785,7 @@ document.addEventListener('keydown', ev => {
   else if (k === 's' || k === 'S') { Sound.toggle(); renderSnd(); }
   else if (k === 'Escape' && state.sel) { clearSel(); Sound.play('latch'); }
 });
-new ResizeObserver(() => { const m = M(); if (m) { const c = { x: m.vb.x + m.vb.w / 2, y: m.vb.y + m.vb.h / 2 }; const t = fitVB({ x: c.x - m.vb.w / 2, y: c.y - m.vb.h / 2, w: m.vb.w, h: m.vb.h }, 0); setVB(t); } }).observe(sheet);
+new ResizeObserver(() => { const m = M(); if (m && stageSize().r.width > 0) { const c = { x: m.vb.x + m.vb.w / 2, y: m.vb.y + m.vb.h / 2 }; const t = fitVB({ x: c.x - m.vb.w / 2, y: c.y - m.vb.h / 2, w: m.vb.w, h: m.vb.h }, 0); setVB(t); } }).observe(sheet);
 
 /* =====================================================================
    Avvio
@@ -812,5 +812,9 @@ renderSnd(); renderProgress();
 const h = (location.hash || '').slice(1);
 const start = DATA[h] ? h : 'UBERON_0000948';
 const startView = PRESENCE.body.has(start) ? 'body' : 'brain';
-showView(startView, { select: start, frame: !!DATA[h], silent: true });
+// La geometria si misura sullo schermo: se la pagina si apre in una scheda non ancora visibile
+// la tavola misura 0 px, quindi si attende che abbia dimensioni prima di costruire il modello.
+const sized = () => { const r = stage.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
+if (sized()) showView(startView, { select: start, frame: !!DATA[h], silent: true });
+else { const ro = new ResizeObserver(() => { if (!sized()) return; ro.disconnect(); showView(startView, { select: start, frame: !!DATA[h], silent: true }); }); ro.observe(stage); }
 })();
