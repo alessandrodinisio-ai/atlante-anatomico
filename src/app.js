@@ -399,8 +399,9 @@ function renderList() {
   let html = '', n = 0;
   for (const [k, list] of groups) {
     if (!list.length) continue; n += list.length;
-    html += `<div class="grp" style="--c:var(--p-${k})"><h3><i class="sw"></i>${esc(V.names[k] || k)}<span class="n">${list.length}</span></h3>`;
-    for (const u of list) {
+    const open = q || !narrow.matches || openGroups.has(k) || list.includes(state.sel);
+    html += `<div class="grp" style="--c:var(--p-${k})"><h3><button class="gh" data-g="${k}" aria-expanded="${!!open}"><i class="sw"></i>${esc(V.names[k] || k)}<span class="n">${list.length}</span></button></h3>`;
+    if (open) for (const u of list) {
       const short = u.startsWith('CL_') ? 'CL ' + u.slice(3) : u.slice(7);
       html += `<button class="item${hid.has(k) ? ' off' : ''}" data-uid="${u}" ${u === state.sel ? 'aria-current="true"' : ''}><i class="seen${state.seen.has(u) ? ' on' : ''}"></i><span class="nm">${esc(DATA[u].it)}</span><span class="uid">${short}</span></button>`;
     }
@@ -415,6 +416,8 @@ function renderList() {
   }
 }
 let listHover = false;
+const narrow = matchMedia('(max-width: 940px)'), openGroups = new Set();
+narrow.addEventListener('change', () => renderList());
 function renderLegend() {
   const V = VIEWS[state.view], m = M(), hid = state.hidden[state.view];
   const present = V.order.filter(k => m.ids.some(u => keyOf(u) === k));
@@ -480,7 +483,12 @@ function tabHTML(uid, tab) {
   }
   return '';
 }
+function renderToRead() {
+  const b = $('#toread'), show = state.sel && !(state.mode === 'quiz' && !(state.quiz && state.quiz.revealed));
+  b.hidden = !show; if (show) b.innerHTML = `${esc(DATA[state.sel].it)}<span>Leggi la scheda ↓</span>`;
+}
 function renderPanel() {
+  renderToRead();
   const P = $('#panel');
   if (state.mode === 'quiz' && !(state.quiz && state.quiz.revealed)) {
     const q = state.quiz;
@@ -613,22 +621,31 @@ function showView(view, opts = {}) {
 const pointers = new Map(); let drag = null, pinch = null, hoverRaf = 0;
 stage.addEventListener('pointerdown', ev => {
   Sound.unlock();
-  stage.setPointerCapture(ev.pointerId);
+  try { stage.setPointerCapture(ev.pointerId); } catch {}
   pointers.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
-  if (pointers.size === 1) drag = { x: ev.clientX, y: ev.clientY, vb: { ...M().vb }, moved: false };
-  else if (pointers.size === 2) { const [a, b] = [...pointers.values()]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), vb: { ...M().vb } }; drag = null; }
+  if (pointers.size === 1) drag = { x: ev.clientX, y: ev.clientY, vb: { ...M().vb }, moved: false, touch: ev.pointerType === 'touch' };
+  else if (pointers.size === 2) {
+    const [a, b] = [...pointers.values()], mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+    pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), vb: { ...M().vb }, p: clientToSvg(mx, my) }; drag = null; hideHint();
+  }
 });
 stage.addEventListener('pointermove', ev => {
   if (pointers.has(ev.pointerId)) pointers.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
   const pt = clientToSvg(ev.clientX, ev.clientY);
   $('#coord').textContent = `x ${pt.x.toFixed(1)}  y ${pt.y.toFixed(1)}`;
   if (pinch && pointers.size === 2) {
-    const [a, b] = [...pointers.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
-    const m = M(); m.vb = { ...pinch.vb }; zoomAt(pinch.d / d, (a.x + b.x) / 2, (a.y + b.y) / 2); return;
+    // Il punto della tavola sotto le dita resta sotto le dita: zoom e spostamento insieme.
+    const [a, b] = [...pointers.values()], d = Math.hypot(a.x - b.x, a.y - b.y), m = M();
+    const k = Math.min(m.full.w * 1.4 / pinch.vb.w, Math.max(m.full.w / 40 / pinch.vb.w, pinch.d / d));
+    const w = pinch.vb.w * k, h = pinch.vb.h * k, { W, H, r } = stageSize(), u = Math.max(w / W, h / H);
+    const mx = (a.x + b.x) / 2 - r.left, my = (a.y + b.y) / 2 - r.top;
+    setVB({ x: pinch.p.x - mx * u - (W * u - w) / 2, y: pinch.p.y - my * u - (H * u - h) / 2, w, h }); return;
   }
   if (drag) {
     const dx = ev.clientX - drag.x, dy = ev.clientY - drag.y;
-    if (!drag.moved && Math.hypot(dx, dy) > 4) { drag.moved = true; stage.classList.add('dragging'); hideTip(); }
+    if (!drag.moved && Math.hypot(dx, dy) > (drag.touch ? 8 : 4)) { drag.moved = true; hideTip(); if (!drag.touch) stage.classList.add('dragging'); }
+    // Con un dito la tavola non si sposta: il gesto verticale scorre la pagina, quello orizzontale mostra l'avviso.
+    if (drag.moved && drag.touch) { if (Math.abs(dx) > Math.abs(dy)) showHint(); return; }
     if (drag.moved) {
       const { W, H } = stageSize(), u = Math.max(drag.vb.w / W, drag.vb.h / H);
       setVB({ ...drag.vb, x: drag.vb.x - dx * u, y: drag.vb.y - dy * u }); return;
@@ -648,6 +665,9 @@ function endPointer(ev) {
   if (ev.type === 'pointerup' && drag && !wasDrag && !wasPinch) onClick(ev.clientX, ev.clientY);
   if (pointers.size === 0) { drag = null; stage.classList.remove('dragging'); }
 }
+let hintT = 0;
+function showHint() { const h = $('#touchhint'); h.classList.add('on'); clearTimeout(hintT); hintT = setTimeout(hideHint, 1600); }
+function hideHint() { $('#touchhint').classList.remove('on'); }
 stage.addEventListener('pointerup', endPointer);
 stage.addEventListener('pointercancel', endPointer);
 stage.addEventListener('pointerleave', () => { if (!drag) { setHover(null); hideTip(); } });
@@ -710,7 +730,12 @@ function selectFromList(uid) {
   select(uid, { frame: true });
 }
 const list = $('#list');
-list.addEventListener('click', ev => { const b = ev.target.closest('.item'); if (b) selectFromList(b.dataset.uid); });
+list.addEventListener('click', ev => {
+  const g = ev.target.closest('.gh');
+  if (g) { const k = g.dataset.g, was = g.getAttribute('aria-expanded') === 'true'; was ? openGroups.delete(k) : openGroups.add(k);
+    if (!narrow.matches) return; Sound.play('tab'); renderList(); return; }
+  const b = ev.target.closest('.item'); if (b) selectFromList(b.dataset.uid);
+});
 list.addEventListener('pointerenter', () => listHover = true); list.addEventListener('pointerleave', () => { listHover = false; setHover(null); });
 list.addEventListener('pointerover', ev => { const b = ev.target.closest('.item'); if (b && state.mode !== 'quiz') setHover(b.dataset.uid); });
 
@@ -757,6 +782,7 @@ $('#quiz').addEventListener('click', ev => {
   if (id === 'q-skip') { const q = state.quiz; q.done++; q.streak = 0; q.msg = 'Ecco dove si trova.'; q.cls = ''; reveal(false); }
   if (id === 'q-exit') stopQuiz();
 });
+$('#toread').addEventListener('click', () => { Sound.play('tab'); $('#panel').scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' }); });
 let toastT = 0;
 function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 1800); }
 

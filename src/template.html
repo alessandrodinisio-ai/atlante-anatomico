@@ -69,8 +69,9 @@ button{cursor:pointer;background:none;border:0;padding:0}
 .search input::placeholder{color:var(--ink-3)}
 .search kbd{position:absolute;right:9px;top:50%;transform:translateY(-50%);font:11px/1 var(--mono);color:var(--ink-3);border:1px solid var(--rule);border-radius:2px;padding:3px 5px}
 .grp{display:flex;flex-direction:column}
-.grp h3{display:flex;align-items:center;gap:8px;margin:0 0 4px;font:500 11px/1.4 var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)}
-.grp h3 .n{margin-left:auto;font:11px var(--mono);letter-spacing:0}
+.grp h3{margin:0 0 4px;font:inherit}
+.gh{width:100%;display:flex;align-items:center;gap:8px;font:500 11px/1.4 var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);text-align:left;cursor:default}
+.gh .n{margin-left:auto;font:11px var(--mono);letter-spacing:0}
 .sw{width:9px;height:9px;flex:none;border-radius:1px;background:var(--c);box-shadow:inset 0 0 0 1px color-mix(in oklab,var(--c) 60%,var(--ink))}
 .item{display:grid;grid-template-columns:10px minmax(0,1fr) auto;align-items:center;gap:8px;text-align:left;padding:5px 8px 5px 6px;border-radius:2px;color:var(--ink-2);font-size:14px;line-height:1.3}
 .item:hover{background:var(--rule-2);color:var(--ink)}
@@ -219,6 +220,7 @@ svg.anat.quiz .o.hov{fill:color-mix(in oklab,var(--ink-3) 46%,var(--plate));stro
 .disclaimer{font-size:12px;color:var(--ink-3);margin:0}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);font-size:13px;padding:8px 12px;border-radius:2px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:30}
 .toast.on{opacity:1}
+.toread,.touchhint{display:none}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
 @media (max-width:1240px){ .main{grid-template-columns:232px minmax(0,1fr) 370px} .panel h2{font-size:32px} .brand .sub{display:none} }
@@ -230,7 +232,24 @@ svg.anat.quiz .o.hov{fill:color-mix(in oklab,var(--ink-3) 46%,var(--plate));stro
   .plate{order:1;padding:14px 0 6px}
   .panel{order:2;border-left:0;border-top:1px solid var(--rule);padding:20px 0 28px}
   .index{order:3;border-right:0;border-top:1px solid var(--rule);padding:18px 0 28px}
-  .sheet{flex:none;height:min(72vh,640px);min-height:360px}
+  .sheet{flex:none;height:min(60vh,560px);min-height:340px}
+  .regions,.legend{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-inline:calc(-1 * max(16px,env(safe-area-inset-left,0px)));padding-inline:max(16px,env(safe-area-inset-left,0px));padding-bottom:2px}
+  .regions::-webkit-scrollbar,.legend::-webkit-scrollbar{display:none}
+  .regions>*,.legend>*{flex:none}
+  .platehead .coord{display:none}
+  .platehead .cap{font-size:14px}
+  .grp{border-bottom:1px solid var(--rule-2)}
+  .gh{padding:12px 0;cursor:pointer;font-size:12px}
+  .gh::after{content:"+";font:14px var(--mono);color:var(--ink-3);width:14px;text-align:right}
+  .gh[aria-expanded="true"]::after{content:"−"}
+  .grp h3{margin:0}
+  .grp .item:last-child{margin-bottom:10px}
+  .item{padding-block:9px;font-size:15px}
+  .toread{display:flex;flex-direction:column;align-items:flex-start;gap:2px;position:absolute;left:10px;bottom:10px;max-width:calc(100% - 100px);background:var(--ink);color:var(--paper);padding:9px 12px;border-radius:2px;font:400 15px/1.2 var(--serif);text-align:left}
+  .toread span{font:500 11px/1.2 var(--sans);letter-spacing:.06em;text-transform:uppercase;opacity:.75}
+  .touchhint{display:block;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:var(--ink);color:var(--paper);font-size:14px;padding:10px 14px;border-radius:2px;opacity:0;transition:opacity .2s;pointer-events:none;text-align:center;max-width:70%}
+  .touchhint.on{opacity:.92}
+  .zoom button{width:40px;height:40px}
   .progress{display:none}
   .mast{gap:12px}
   .brand h1{font-size:22px}
@@ -240,6 +259,8 @@ svg.anat.quiz .o.hov{fill:color-mix(in oklab,var(--ink-3) 46%,var(--plate));stro
   .quizcard .q-row{justify-content:flex-start}
   .quizcard .q-target{font-size:22px}
 }
+/* Su schermi touch un dito scorre la pagina; i gesti a due dita restano alla tavola. */
+@media (pointer:coarse){ .stage{touch-action:pan-y} }
 @media (prefers-reduced-motion:reduce){ *{transition:none!important;animation:none!important} }
 </style>
 
@@ -287,6 +308,8 @@ svg.anat.quiz .o.hov{fill:color-mix(in oklab,var(--ink-3) 46%,var(--plate));stro
           <button id="z-reset" aria-label="Vista intera" title="Vista intera (0)"><svg viewBox="0 0 16 16"><rect x="2.5" y="2.5" width="11" height="11" stroke="currentColor" stroke-width="1.4" fill="none"/></svg></button>
         </div>
         <span class="zoomlvl" id="zlvl">1,0×</span>
+        <button class="toread" id="toread" hidden></button>
+        <div class="touchhint" id="touchhint" aria-hidden="true">Usa due dita per spostare e ingrandire la tavola</div>
       </div>
       <div class="regions" id="regions"></div>
       <div class="legend" id="legend"></div>
