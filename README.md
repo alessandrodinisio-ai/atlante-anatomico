@@ -18,7 +18,7 @@ Gli SVG sono incorporati nella pagina, senza richieste di rete oltre ai font di 
 - **Zoom e pan** (rotellina, trascinamento, pinch), inquadrature per regione, filtri per sistema.
 - **Esercitazione**: individua la struttura sulla tavola, tre tentativi, indizi e punteggio.
 - **Feedback sonoro** sintetizzato in Web Audio (legno, carta, scatti), disattivabile con il tasto S.
-- Tema chiaro e scuro, layout per telefono, collegamenti diretti alle strutture (`atlante.html#UBERON_0002107`).
+- Tema chiaro e scuro, layout per telefono, collegamenti diretti alle strutture (`…/atlante-anatomico/#UBERON_0002107`).
 
 Tasti: `/` cerca · `↑ ↓` struttura precedente/successiva · `1–5` linguette · `+ − 0` zoom · `F` inquadra · `S` suoni · `Esc` deseleziona.
 
@@ -32,7 +32,7 @@ src/app.js              logica: caricamento SVG, zoom, selezione, schede, eserci
 src/data_*.js           contenuti anatomici per sistema
 src/svg/                SVG ottimizzati (male.svg, brain.svg)
 src/optimize.cjs        ottimizzazione SVGO 1.x con cleanupIDs disattivato
-src/build.py            assembla atlante.html
+src/build.py            assembla index.html e atlante.html
 ```
 
 ## Ricostruire la pagina
